@@ -4,13 +4,30 @@ import numpy as np
 from point import point
 from path import path
 import socket
+from msvcrt import getch
 #from statistics import median
 
+
+UDP_active=False
+UDP_active_h=UDP_active
+rot_speed_k=26
+speed=120#60
 IP='169.254.104.146'
 PORT=49122
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
 UDP_cnt=0
+#UDP_active=True
+#
+x_=np.array([100,200,300,400,500,550,560])
+y_=np.array([100,110,80,120,140,180,200])
+
+
+#x_=np.array([560,550,500,400,300,200,100])
+#y_=np.array([200,180,140,120,80,110,100])
+
+y_+=140
+
 time=0
 
 #import copy
@@ -108,11 +125,7 @@ pioneer=Agent();
       
 
 
-x_=np.array([100,200,300,400,500,550,560])
-y_=np.array([100,110,80,120,140,180,200])
-#
-#x_=np.array([560,550,500,400,300,200,100])
-#y_=np.array([200,180,140,120,80,110,100])
+
 
 pioneerPath=path(x_,y_)
 pioneerPath.comp_n()
@@ -145,11 +158,11 @@ h,s,v = 100,100,100
 
 # Creating track bar
 cv2.createTrackbar('h', 'window',0,179,nothing)
-#h = cv2.setTrackbarPos('h','window', 116)
-h = cv2.setTrackbarPos('h','window', 0)
+h = cv2.setTrackbarPos('h','window', 112)
+
 cv2.createTrackbar('s', 'window',0,255,nothing)
-#s = cv2.setTrackbarPos('s','window', 159)
-s = cv2.setTrackbarPos('s','window', 56)
+s = cv2.setTrackbarPos('s','window', 98)
+
 cv2.createTrackbar('v', 'window',0,255,nothing)
 v=cv2.setTrackbarPos('v','window', 189)
 
@@ -158,8 +171,8 @@ v=cv2.setTrackbarPos('v','window', 189)
 
 size = 480, 640, 3
 accumed_img=np.zeros(size, dtype=np.uint8)
-write_on=1;
-wind=35;
+write_on=0;
+wind=25;
 
 if write_on:
     out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
@@ -178,8 +191,18 @@ def click_and_crop(event, x, y, flags, pioneer):
 cv2.setMouseCallback("window", click_and_crop)
 #print(pioneerPath.p);
 
+def on_press(key):
+    try:
+        print('alphanumeric key {0} pressed'.format(
+            key.char))
+    except AttributeError:
+        print('special key {0} pressed'.format(
+            key))
+
+
 while(1):
-    
+#    if(keyboard.is_pressed('q')):
+#        print('hello')
     time+=1
 #    print(time)
     _, src_frame = cap.read()
@@ -201,13 +224,15 @@ while(1):
 #    upper_blue = np.array([180,255,255])
 #    upper_blue = np.array([thresh(h+wind,180),thresh(s+wind,255),thresh(v.+wind,255)])
     lower_blue1 = np.array([h,s,v])
-    upper_blue1 = np.array([min(180,h+wind),255,255])
+    lower_blue2 = np.array([0,s,v])
     
-#    lower_blue2 = np.array([h,s,v])
-    upper_blue2 = np.array([max(-1,h+wind-180),255,255])
+    upper_blue1 = np.array([min(180,h+wind),255,230])
+    upper_blue2 = np.array([max(-1,h+wind-180),255,230])
 
+    kernel = np.ones((7,7),np.float32)/49
+    hsv = cv2.filter2D(hsv,-1,kernel)
     mask = cv2.inRange(hsv,lower_blue1, upper_blue1)
-    mask_h= cv2.inRange(hsv,np.array([0,0,0]), upper_blue2)
+    mask_h= cv2.inRange(hsv,lower_blue2, upper_blue2)
     mask|=mask_h
 #    mask=mask_h
 #    mask=~mask
@@ -245,9 +270,9 @@ while(1):
     if(M["m00"]!=0):
         cX = int(M["m10"] / M["m00"]) 
         cY = int(M["m01"] / M["m00"])
-    else:
-        cX=640;
-        cY=480;
+#    else:
+#        cX=640;
+#        cY=480;
 
     pioneerPath.check_reached(pioneer.p);
 
@@ -262,13 +287,16 @@ while(1):
     pioneer.comp_dir();
     dphi_,err=(pioneerPath.pt-pioneer.p).getAngle(pioneer.dir)#bad coding is here
     err2=0
-    if((pioneerPath.pt-pioneer.p).length2()<200):
+    if((pioneerPath.pt-pioneer.p).length2()<900):  
         err2=1
+        pioneer.dphi=0
+#        print((pioneerPath.pt-pioneer.p).length2())
+        
     if((err==0) and (err2==0)):
-        pioneer.dphi=dphi_*20
+        pioneer.dphi=dphi_*rot_speed_k
     
 
-    speed=60
+    
     
     
     ##_________UDP_time___________
@@ -282,15 +310,18 @@ while(1):
             rot_speed=0
             
         if(pioneerPath.stop):
-#            print('hello')
             rot_speed=0
             speed=0
 #        print(rot_speed)
-        if(rot_speed<0):
-            sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed), 0,speed]), (IP, PORT))
-        else:
-            sock.sendto(bytes([0, np.uint8(rot_speed), 0,speed]), (IP, PORT))
-    
+        if(UDP_active):    
+            if(rot_speed<0):
+                sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed),1,0]), (IP, PORT))
+            else:
+                sock.sendto(bytes([0, np.uint8(rot_speed), 1,0]), (IP, PORT))
+    if UDP_active_h and not(UDP_active):#            
+        sock.sendto(bytes([0,0,0,0]), (IP, PORT))
+            
+    UDP_active_h=UDP_active
     cv2.line(result,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
 #    pioneer.go(pioneerPath.pt);
     
@@ -302,7 +333,7 @@ while(1):
     draw_frame=src_frame
     cv2.circle(draw_frame, (cX, cY), 5, (255, 255, 255), -1)
     phrase=['HERE WE GO', 'GO GO GO!!','IM COOL ROBOT', 'YEAH']
-    cv2.putText(draw_frame, phrase[min(pioneerPath.i,3)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
+    cv2.putText(draw_frame, phrase[min(pioneerPath.i,0)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
 
 #    if()
 #    print(pioneerPath.is_right(DR.p,0))
@@ -327,6 +358,12 @@ while(1):
         if write_on:
             out.release()
         break
+    elif k==ord('u'):
+        
+        UDP_active=not(UDP_active)
+        print('UDP_active: ',UDP_active)
+        
+    
 
 cap.release()
 
