@@ -48,6 +48,8 @@ class point:
         else:
             return [-3.14-angle,err]
         
+#    def __mul__(self,v):
+#        return self.x*v.x+self.y+v.y;
     def mult(self,a):
         return a.x*self.x+a.y*self.y
     def __sub__(self,p):
