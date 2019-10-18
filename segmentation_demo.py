@@ -125,6 +125,7 @@ while(1):
 #    mask=mask_h
 #    mask=~mask
 
+#    result = cv2.bitwise_and(frame, mask)
     result = cv2.bitwise_and(frame,frame,mask = mask)
 #    result=cv2.blur(result,(10,10))
 #    result_ac=cv2.addWeighted(result,k,result_ac,1-k,0)

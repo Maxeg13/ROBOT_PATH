@@ -181,8 +181,15 @@ if write_on:
 def click_and_crop(event, x, y, flags, pioneer):
     if(event==cv2.EVENT_LBUTTONDOWN):
         p=point(x,y)
-        global targ
+        global targ,obs_ps,obs,draw_obs
         targ=p
+        obs_ps.append(p)
+        
+        if(len(obs_ps)==3):
+            obs=obstacle(obs_ps);
+            draw_obs=1
+            
+        
 #        print("hey");
 #        print(DR.p.vec())
 #        targ=p
@@ -202,11 +209,12 @@ def on_press(key):
             key))
 
 
-pss=[point(233,400),point(300,420), point(200,200)];
-obs=obstacle(pss,3);
-
+#pss=[point(233,400),point(300,420), point(200,200)];
+draw_obs=0;
+obs_ps=[];
 cX=2;
 cY=2;
+
 while(1):
 #    if(keyboard.is_pressed('q')):
 #        print('hello')
@@ -244,7 +252,7 @@ while(1):
 #    mask=mask_h
 #    mask=~mask
 
-    masked_img = cv2.bitwise_and(src_frame,src_frame,mask = mask)
+    masked_img = cv2.bitwise_and(src_frame,src_frame,mask = mask)#whaaaaaaaaaaaaaaaaaaat?????????
 #    result=cv2.blur(result,(10,10))
     k=0.9
     accumed_img=cv2.addWeighted(masked_img,k,accumed_img,1-k,0)
@@ -340,7 +348,7 @@ while(1):
     draw_frame=src_frame
     cv2.circle(draw_frame, (cX, cY), 5, (255, 255, 255), -1)
     phrase=['HERE WE GO', 'GO GO GO!!','IM COOL ROBOT', 'YEAH']
-    cv2.putText(draw_frame, phrase[min(pioneerPath.i,0)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
+#    cv2.putText(draw_frame, phrase[min(pioneerPath.i,0)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
 
 #    if()
 #    print(pioneerPath.is_right(DR.p,0))
@@ -349,9 +357,13 @@ while(1):
     cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
     
     draw_frame=pioneerPath.draw(draw_frame)
-    draw_frame=obs.draw(draw_frame)
+#    draw_frame[200][100]=[255,255,255]
+    if(draw_obs):
+        draw_frame=obs.draw(draw_frame)
 #    print(pioneerPath.size)
 #    draw_frame=cv2.hconcat((result,frame))
+#    mask1=np.zeros((480,640),dtype=np.uint8);
+#    draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = mask1)
     cv2.imshow('window',draw_frame)
     cv2.imshow('hsv',result)
 
