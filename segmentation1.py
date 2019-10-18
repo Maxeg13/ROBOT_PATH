@@ -3,6 +3,7 @@ import numpy as np
 #from pyimagesearch import imutils
 from point import point
 from path import path
+from obstacle import obstacle
 import socket
 from msvcrt import getch
 #from statistics import median
@@ -127,7 +128,7 @@ pioneer=Agent();
 
 
 
-pioneerPath=path(x_,y_)
+pioneerPath=path(x_,y_) #bad __ 
 pioneerPath.comp_n()
 targ=point(10,10)   
 
@@ -182,6 +183,7 @@ def click_and_crop(event, x, y, flags, pioneer):
         p=point(x,y)
         global targ
         targ=p
+#        print("hey");
 #        print(DR.p.vec())
 #        targ=p
 #        print(targ.vec())
@@ -200,6 +202,11 @@ def on_press(key):
             key))
 
 
+pss=[point(233,400),point(300,420), point(200,200)];
+obs=obstacle(pss,3);
+
+cX=2;
+cY=2;
 while(1):
 #    if(keyboard.is_pressed('q')):
 #        print('hello')
@@ -342,6 +349,7 @@ while(1):
     cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
     
     draw_frame=pioneerPath.draw(draw_frame)
+    draw_frame=obs.draw(draw_frame)
 #    print(pioneerPath.size)
 #    draw_frame=cv2.hconcat((result,frame))
     cv2.imshow('window',draw_frame)

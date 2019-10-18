@@ -6,8 +6,8 @@ class path:
         self.stop=0
         self.i=0
         self.pt=point()
-        self.size=a.size
-        self.ps=[]# ps - pointers
+        self.size=a.size# hooooooooow?????
+        self.ps=[]# ps - points
         self.tau=[]
         self.n=[]
         for i in range(0,self.size):
