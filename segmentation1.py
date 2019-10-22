@@ -185,9 +185,11 @@ def click_and_crop(event, x, y, flags, pioneer):
         targ=p
         obs_ps.append(p)
         
-        if(len(obs_ps)==3):
-            obs=obstacle(obs_ps);
-            obs.createMask();
+        if(len(obs_ps)==4):
+            
+            obs.createMask(obs_ps);
+            obs.createAuxMasks();
+            
             draw_obs=1;
             file = open("obstacle.txt","w"); 
             for i in range(0,480):
@@ -216,10 +218,27 @@ def on_press(key):
 
 
 #pss=[point(233,400),point(300,420), point(200,200)];
-draw_obs=0;
+
+
+
+    
 obs_ps=[];
 cX=2;
 cY=2;
+
+
+obs=obstacle();
+
+draw_obs=0;
+
+
+#file = open("obstacle.txt", "r");
+#for i in range(0,480):
+#    l=file.readline()[0:1280:2];
+#    for j in range(0,640):
+#        obs.mask[i,j]=int(l[j]);
+#obs.createAuxMasks();   
+
 
 while(1):
 #    if(keyboard.is_pressed('q')):
