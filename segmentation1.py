@@ -187,7 +187,13 @@ def click_and_crop(event, x, y, flags, pioneer):
         
         if(len(obs_ps)==3):
             obs=obstacle(obs_ps);
-            draw_obs=1
+            obs.createMask();
+            draw_obs=1;
+            file = open("obstacle.txt","w"); 
+            for i in range(0,480):
+                for j in range(0,640):
+                    file.write(str(obs.mask[i][j])+';'); 
+                file.write('\n');
             
         
 #        print("hey");
@@ -359,13 +365,17 @@ while(1):
     draw_frame=pioneerPath.draw(draw_frame)
 #    draw_frame[200][100]=[255,255,255]
     if(draw_obs):
-        draw_frame=obs.draw(draw_frame)
+#        draw_frame = obs.draw(draw_frame)
+        draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = obs.not_mask)
+        draw_frame=draw_frame+obs.blue_mask;
+#        cv2.imshow('hsv',obs.blue_mask)
 #    print(pioneerPath.size)
 #    draw_frame=cv2.hconcat((result,frame))
 #    mask1=np.zeros((480,640),dtype=np.uint8);
-#    draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = mask1)
+    
     cv2.imshow('window',draw_frame)
     cv2.imshow('hsv',result)
+    
 
     
     

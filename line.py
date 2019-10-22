@@ -12,5 +12,20 @@ class line:
         self.r=self.p2-self.p1;
     def comp_relat(self,p):
         return(p-self.p1);
-    def chek_within(self,p):
-        return(self.r.Vmult(comp_relat(p))>0);            
+    def check_within(self,p):
+        return(self.r.Vmult(self.comp_relat(p))<0);      
+    def check_within_length(self,p):
+        a=self.comp_relat(p).mult(self.r);
+        return(a>0 and a<self.r.length2());
+    def check_outside(self,p,ind):
+        if(self.check_within_length(p)):
+            a=self.r.Vmult(self.comp_relat(p))/self.r.length();
+            if(a>=0 and a<(ind)):
+                return True;
+        return False;
+    
+    def check_within_p1(self,p,ind):
+        a=p-self.p1;
+        l2=a.length();
+        
+        return(l2<ind);
