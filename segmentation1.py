@@ -8,6 +8,11 @@ import socket
 from msvcrt import getch
 #from statistics import median
 
+file_save=0;
+file_load=1;
+file_2_load='obstacle1.txt';
+file_2_save='obstacle1.txt';
+#load_obstacle=False;
 
 UDP_active=False
 UDP_active_h=UDP_active
@@ -109,7 +114,7 @@ class Agent:
  
             
         
-    def go_(self,targ):
+    def go_(self,targ):# _ is for what??
 #        print(self.p.vecF())
         
         self.p+=(self.v*4);
@@ -191,11 +196,14 @@ def click_and_crop(event, x, y, flags, pioneer):
             obs.createAuxMasks();
             
             draw_obs=1;
-            file = open("obstacle.txt","w"); 
-            for i in range(0,480):
-                for j in range(0,640):
-                    file.write(str(obs.mask[i][j])+';'); 
-                file.write('\n');
+            
+            if(file_save):
+                file = open(file_2_save,"w"); 
+                for i in range(0,480):
+                    for j in range(0,640):
+                        file.write(str(obs.mask[i][j])+';'); 
+                    file.write('\n');
+                file.close();
             
         
 #        print("hey");
@@ -231,13 +239,17 @@ obs=obstacle();
 
 draw_obs=0;
 
-
-#file = open("obstacle.txt", "r");
-#for i in range(0,480):
-#    l=file.readline()[0:1280:2];
-#    for j in range(0,640):
-#        obs.mask[i,j]=int(l[j]);
-#obs.createAuxMasks();   
+if(file_load):
+    file = open(file_2_load, "r");
+    for i in range(0,480):
+        l=file.readline()[0:1280:2];
+        for j in range(0,640):
+            obs.mask[i,j]=int(l[j]);
+    obs.createAuxMasks();   
+    file.close();
+    draw_obs=1;
+else:
+    draw_obs=0;    
 
 
 while(1):
