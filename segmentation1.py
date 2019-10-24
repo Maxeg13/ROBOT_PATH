@@ -270,11 +270,13 @@ else:
     draw_obs=0;    
 
 pioneerPath.create_targ_mask(pioneer.rad);
-saveFile('targ.txt',pioneerPath.targ_mask)
+#saveFile('targ.txt',pioneerPath.targ_mask)
+size = 40, 40, 3
+hsv_rect=np.zeros(size, dtype=np.uint8)
 
 while(1):
-#    if(keyboard.is_pressed('q')):
-#        print('hello')
+    
+    
     time+=1
 #    print(time)
     _, src_frame = cap.read()
@@ -287,7 +289,10 @@ while(1):
     s = cv2.getTrackbarPos('s','window')
     v = cv2.getTrackbarPos('v','window')
 
-
+    hsv_rect[:,:,0]=h
+    hsv_rect[:,:,1]=s
+    hsv_rect[:,:,2]=v
+    cv2.cvtColor(hsv_rect,cv2.COLOR_HSV2BGR)
 
     # Normal masking algorithm
     
@@ -316,6 +321,12 @@ while(1):
    # calculate moments of binary image
 #     ..
     result=accumed_img.copy()#for drawing vectors
+    
+#    alpha=0.5;   
+#    beta = ( 1.0 - alpha );
+#    cv2.addWeighted( result, alpha, hsv_rect, beta, 0.0, result);
+#    result=result|hsv_rect
+    
     gray = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
    
     
@@ -412,6 +423,11 @@ while(1):
 #    print(targ.vec())
     cv2.circle(draw_frame, pioneer.p.vec(), 6, (255, 0, 255), -1)
     cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
+    
+#    cv2.circle(result, (20,20), 20, (255, 0, 255), -1)
+#    pts_=np.array([(1,1),(1,20),(20,20)]);
+#    cv2.fillPoly(result,pts_,(255,255,255))
+    result[0:40,0:40]=hsv_rect.copy()
     
     draw_frame=pioneerPath.draw(draw_frame)
 #    draw_frame[200][100]=[255,255,255]
