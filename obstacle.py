@@ -15,13 +15,11 @@ class obstacle:
         self.blue_mask=np.zeros((480,640,3),dtype=np.uint8);
         self.blue_mask[:,:,0]=255;
         
-
-#        for i in range(1,ps_.size)
     def draw(self,img):
         for i in range(0,self.size):
             cv2.line(img, self.ps[i-1].vec(), self.ps[i].vec(), (255,0,0),2)
         return img
-    def createMask(self,ps_):
+    def createMask(self,ps_,ind):
         self.ps=ps_;
         self.size=len(ps_);
         self.lines=[];        

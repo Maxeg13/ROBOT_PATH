@@ -1,8 +1,13 @@
 import cv2
+import numpy as np
 from point import point
 
 class path:
     def __init__(self,a,b):
+        self.targ_mask=np.zeros((480,640),dtype=np.uint8);
+        self.targ_red_mask=np.zeros((480,640,3),dtype=np.uint8);
+        self.targ_red_mask[:,:,2]=255;
+        
         self.stop=0
         self.i=0
         self.pt=point()
@@ -46,8 +51,6 @@ class path:
         else:
             return False
     def check_reached(self,p):
-#        print(self.pt.vec())
-#        print(not(self.is_right(p,self.i)))
         if(not(self.is_right(p,self.i))):
             
             self.i+=1;
@@ -56,3 +59,13 @@ class path:
             self.i-=1;
             
         self.pt=self.ps[self.i+1]
+        
+    def create_targ_mask(self,ind):
+        p_=self.ps[self.size-1]
+        for i in range(0,480):
+            for j in range(0,640):                
+                if((p_-point(j,i)).length2()<(ind*ind)):
+                    self.targ_mask[i,j]=1;
+        self.targ_red_mask=cv2.bitwise_and(self.targ_red_mask,self.targ_red_mask,mask = self.targ_mask);
+
+        

@@ -6,10 +6,10 @@ from path import path
 from obstacle import obstacle
 import socket
 from msvcrt import getch
-#from statistics import median
+from math import sqrt,sin,cos, asin
 
 file_save=0;
-file_load=1;
+file_load=0;
 file_2_load='obstacle1.txt';
 file_2_save='obstacle1.txt';
 #load_obstacle=False;
@@ -36,9 +36,27 @@ y_+=140
 
 time=0
 
-#import copy
+def saveFile(name, data):
+    file = open(name,"w"); 
+    for i in range(0,480):
+        for j in range(0,640):
+            file.write(str(data[i][j])+';'); 
+        file.write('\n');
+    file.close();
+        
+def loadFile(name):     
+    data=np.zeros((480,640),dtype=np.uint8)    
+    file = open(name, "r");
+    for i in range(0,480):
+        l=file.readline()[0:1280:2];
+        for j in range(0,640):
+            data[i,j]=int(l[j]);  
+    file.close();
+    return data
+        
+    
 
-from math import sqrt,sin,cos, asin
+
 
 #function for masks
 def pre_median_y(img):
@@ -66,7 +84,9 @@ mX=1
 
 class Agent:    
     def __init__(self):
-        
+        self.mask=np.zeros((480,640),dtype=np.uint8)
+        self.mask[20,20]=1;
+        self.rad=25
         self.dirs_ptr=0;
         self.dirs_cnt=0;
         self.dphi=0;
@@ -125,7 +145,7 @@ class Agent:
         self.v=point(cos(self.phi),sin(self.phi));
 
 pioneer=Agent();
-
+saveFile("pioneer.txt",pioneer.mask)
 
 #y_=np.array([100,200,100,100,100,100,100])
       
@@ -177,10 +197,10 @@ v=cv2.setTrackbarPos('v','window', 189)
 
 size = 480, 640, 3
 accumed_img=np.zeros(size, dtype=np.uint8)
-write_on=0;
+write_video_on=0;
 wind=25;
 
-if write_on:
+if write_video_on:
     out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
 
 def click_and_crop(event, x, y, flags, pioneer):
@@ -192,18 +212,19 @@ def click_and_crop(event, x, y, flags, pioneer):
         
         if(len(obs_ps)==4):
             
-            obs.createMask(obs_ps);
+            obs.createMask(obs_ps,25);
             obs.createAuxMasks();
             
             draw_obs=1;
-            
             if(file_save):
-                file = open(file_2_save,"w"); 
-                for i in range(0,480):
-                    for j in range(0,640):
-                        file.write(str(obs.mask[i][j])+';'); 
-                    file.write('\n');
-                file.close();
+                saveFile(file_2_save,  obs.mask);
+#            if(file_save):
+#                file = open(file_2_save,"w"); 
+#                for i in range(0,480):
+#                    for j in range(0,640):
+#                        file.write(str(obs.mask[i][j])+';'); 
+#                    file.write('\n');
+#                file.close();
             
         
 #        print("hey");
@@ -237,20 +258,19 @@ cY=2;
 
 obs=obstacle();
 
-draw_obs=0;
 
 if(file_load):
-    file = open(file_2_load, "r");
-    for i in range(0,480):
-        l=file.readline()[0:1280:2];
-        for j in range(0,640):
-            obs.mask[i,j]=int(l[j]);
-    obs.createAuxMasks();   
-    file.close();
+    obs.mask=loadFile(file_2_load).copy()
+    
+    
+if(file_load):   
+    obs.createAuxMasks();      
     draw_obs=1;
 else:
     draw_obs=0;    
 
+pioneerPath.create_targ_mask(pioneer.rad);
+saveFile('targ.txt',pioneerPath.targ_mask)
 
 while(1):
 #    if(keyboard.is_pressed('q')):
@@ -397,8 +417,11 @@ while(1):
 #    draw_frame[200][100]=[255,255,255]
     if(draw_obs):
 #        draw_frame = obs.draw(draw_frame)
-        draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = obs.not_mask)
-        draw_frame=draw_frame+obs.blue_mask;
+#        draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = obs.not_mask)
+        draw_frame=draw_frame|obs.blue_mask;
+        draw_frame=draw_frame|pioneerPath.targ_red_mask;
+#        draw_frame=draw_frame|pioneer.mask*255;
+        #|pioneer.mask*255;
 #        cv2.imshow('hsv',obs.blue_mask)
 #    print(pioneerPath.size)
 #    draw_frame=cv2.hconcat((result,frame))
@@ -411,12 +434,12 @@ while(1):
     
     
     
-    if write_on:
+    if write_video_on:
         out.write(draw_frame)
 
     k = cv2.waitKey(5) & 0xFF
     if k == 27:
-        if write_on:
+        if write_video_on:
             out.release()
         break
     elif k==ord('u'):
