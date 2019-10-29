@@ -171,7 +171,7 @@ def min(a,b):
         return b
     
     
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 def nothing(x):
     pass
@@ -288,7 +288,6 @@ kernel_circ=kernel_circ*2550/kernel_circ.sum();
 
 while(1):
     
-    
     time+=1
 #    print(time)
     _, src_frame = cap.read()
@@ -306,8 +305,7 @@ while(1):
     hsv_rect[:,:,2]=v
     hsv_rect=cv2.cvtColor(hsv_rect,cv2.COLOR_HSV2BGR)
 
-    # Normal masking algorithm
-    
+        
 #    wind=v;
     k=0.15;
 #    upper_blue = np.array([180,255,255])
@@ -315,17 +313,20 @@ while(1):
     lower_blue1 = np.array([h,s,v])
     lower_blue2 = np.array([0,s,v])
     
-    upper_blue1 = np.array([min(180,h+wind),255,230])
-    upper_blue2 = np.array([max(-1,h+wind-180),255,230])
+    upper_blue1 = np.array([min(180,h+wind),255,255])
+    upper_blue2 = np.array([max(-1,h+wind-180),255,255])
 
     kernel = np.ones((7,7),np.float32)/49
     hsv = cv2.filter2D(hsv,-1,kernel)
+    
+    
+#    88 183 224 (search blue)
     mask = cv2.inRange(hsv,lower_blue1, upper_blue1)
     mask_h= cv2.inRange(hsv,lower_blue2, upper_blue2)
     mask|=mask_h
 #    mask=mask_h
 #    mask=~mask
-
+#masked_img=src_frame.copy()
     masked_img = cv2.bitwise_and(src_frame,src_frame,mask = mask)#whaaaaaaaaaaaaaaaaaaat?????????
 #    result=cv2.blur(result,(10,10))
     k=0.9
