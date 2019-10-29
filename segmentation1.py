@@ -8,6 +8,7 @@ import socket
 from msvcrt import getch
 from math import sqrt,sin,cos, asin
 
+Debug=0;
 file_save=0;
 file_load=0;
 file_obstacle_2_load='obstacle1.txt';
@@ -187,7 +188,11 @@ def min(a,b):
         return b
     
     
-cap = cv2.VideoCapture(0)
+    
+if(Debug):
+    cap = cv2.VideoCapture(1)
+else:
+    cap = cv2.VideoCapture(0)
 
 def nothing(x):
     pass
@@ -333,7 +338,13 @@ while(1):
     
     
 #    88 183 224 (search blue)
-    masked_img_obsts=getMask(src_frame,hsv,[16, 101, 215]);
+#    
+    if(Debug):
+        masked_img_obsts=getMask(src_frame,hsv,[h, s, v]);
+    else:
+        masked_img_obsts=getMask(src_frame,hsv,[16, 101, 215]);
+        
+        
     masked_img_pioneer=getMask(src_frame,hsv,[81, 54, 226]);
 #    result=cv2.blur(result,(10,10))
 #    k=0.9
