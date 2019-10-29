@@ -10,8 +10,8 @@ from math import sqrt,sin,cos, asin
 
 file_save=0;
 file_load=0;
-file_2_load='obstacle1.txt';
-file_2_save='obstacle1.txt';
+file_obstacle_2_load='obstacle1.txt';
+file_obstacle_2_save='obstacle1.txt';
 #load_obstacle=False;
 
 UDP_active=False
@@ -36,11 +36,27 @@ y_+=140
 
 time=0
 
+def getMask(src_frame,hsv,hsv_list):
+    wind=20;
+    lower_blue1 = np.array([hsv_list[0],hsv_list[1],hsv_list[2]])
+    lower_blue2 = np.array([0,hsv_list[1],hsv_list[2]])
+    
+    upper_blue1 = np.array([min(180,hsv_list[0]+wind),255,255])
+    upper_blue2 = np.array([max(-1,hsv_list[0]+wind-180),255,255])
+    mask = cv2.inRange(hsv,lower_blue1, upper_blue1)
+    mask_h= cv2.inRange(hsv,lower_blue2, upper_blue2)
+    mask|=mask_h
+#    mask=mask_h
+#    mask=~mask
+#masked_img=src_frame.copy()
+    masked_img = cv2.bitwise_and(src_frame,src_frame,mask = mask)#whaaaaaaaaaaaaaaaaaaat?????????
+    return masked_img;
+
 def saveFile(name, data):
     file = open(name,"w"); 
     for i in range(0,480):
         for j in range(0,640):
-            file.write(str(data[i][j])+';'); 
+            file.write(str(np.int(data[i][j]))+';'); 
         file.write('\n');
     file.close();
         
@@ -86,7 +102,7 @@ class Agent:
     def __init__(self):
         self.mask=np.zeros((480,640),dtype=np.uint8)
         self.mask[20,20]=1;
-        self.rad=25
+        self.rad=30
         self.dirs_ptr=0;
         self.dirs_cnt=0;
         self.dphi=0;
@@ -198,7 +214,7 @@ v=cv2.setTrackbarPos('v','window', v)
 size = 480, 640, 3
 accumed_img=np.zeros(size, dtype=np.uint8)
 write_video_on=0;
-wind=20;
+
 
 if write_video_on:
     out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
@@ -217,7 +233,7 @@ def click_and_crop(event, x, y, flags, pioneer):
             
             draw_obs=1;
             if(file_save):
-                saveFile(file_2_save,  obs.mask);
+                saveFile(file_obstacle_2_save,  obs.mask);
 #            if(file_save):
 #                file = open(file_2_save,"w"); 
 #                for i in range(0,480):
@@ -260,7 +276,7 @@ obs=obstacle();
 
 
 if(file_load):
-    obs.mask=loadFile(file_2_load).copy()
+    obs.mask=loadFile(file_obstacle_2_load).copy()
     
     
 if(file_load):   
@@ -275,7 +291,7 @@ size = 40, 40, 3
 #import
 hsv_rect=np.zeros(size, dtype=np.uint8)
 
-kernel_size=41
+kernel_size=pioneer.rad*2+1
 kernel_circ=np.zeros((kernel_size,kernel_size,1),np.float);
 _centre=point(int(kernel_size/2),int(kernel_size/2))
 for i in range(0,kernel_size):
@@ -307,41 +323,37 @@ while(1):
 
         
 #    wind=v;
-    k=0.15;
+#    k=0.15;
 #    upper_blue = np.array([180,255,255])
 #    upper_blue = np.array([thresh(h+wind,180),thresh(s+wind,255),thresh(v.+wind,255)])
-    lower_blue1 = np.array([h,s,v])
-    lower_blue2 = np.array([0,s,v])
-    
-    upper_blue1 = np.array([min(180,h+wind),255,255])
-    upper_blue2 = np.array([max(-1,h+wind-180),255,255])
+
 
     kernel = np.ones((7,7),np.float32)/49
     hsv = cv2.filter2D(hsv,-1,kernel)
     
     
 #    88 183 224 (search blue)
-    mask = cv2.inRange(hsv,lower_blue1, upper_blue1)
-    mask_h= cv2.inRange(hsv,lower_blue2, upper_blue2)
-    mask|=mask_h
-#    mask=mask_h
-#    mask=~mask
-#masked_img=src_frame.copy()
-    masked_img = cv2.bitwise_and(src_frame,src_frame,mask = mask)#whaaaaaaaaaaaaaaaaaaat?????????
+    masked_img_obsts=getMask(src_frame,hsv,[16, 101, 215]);
+    masked_img_pioneer=getMask(src_frame,hsv,[81, 54, 226]);
 #    result=cv2.blur(result,(10,10))
-    k=0.9
-    accumed_img=cv2.addWeighted(masked_img,k,accumed_img,1-k,0)
+#    k=0.9
+#    accumed_img=cv2.addWeighted(masked_img,k,accumed_img,1-k,0)
    # calculate moments of binary image
 #     ..
-    result=accumed_img.copy()#for drawing vectors
+    result_pioneer=masked_img_pioneer.copy()
+    result_obsts=masked_img_obsts.copy()#for drawing vectors
     
 #    alpha=0.5;   
 #    beta = ( 1.0 - alpha );
 #    cv2.addWeighted( result, alpha, hsv_rect, beta, 0.0, result);
 #    result=result|hsv_rect
+#    [cY,c]
     
-    gray = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
-   
+    gray = cv2.cvtColor(result_pioneer, cv2.COLOR_BGR2GRAY)
+    M=cv2.moments(gray)
+    if(M["m00"]!=0):
+        cX = int(M["m10"] / M["m00"]) 
+        cY = int(M["m01"] / M["m00"])
     
 #    edges = cv2.Canny(result,100,200)
 #    cnts = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -362,10 +374,7 @@ while(1):
 
 #___________ALGORYTHM___________     
     
-    M=cv2.moments(gray)
-    if(M["m00"]!=0):
-        cX = int(M["m10"] / M["m00"]) 
-        cY = int(M["m01"] / M["m00"])
+
 #    else:
 #        cX=640;
 #        cY=480;
@@ -444,7 +453,7 @@ while(1):
     
 #    IMPORTANT
 #    result=cv2.cvtColor(result,cv2.COLOR_HSV2BGR);
-    result_kerneled=cv2.filter2D(result, cv2.CV_8UC1, kernel_circ);
+    result_kerneled=cv2.filter2D(result_obsts, cv2.CV_8UC1, kernel_circ);
     result_mask = cv2.inRange(result_kerneled,0,150)
     result_mask=255-result_mask
     
@@ -465,11 +474,12 @@ while(1):
 #    draw_frame=cv2.hconcat((result,frame))
 #    mask1=np.zeros((480,640),dtype=np.uint8);
     
-    cv2.line(result,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
+    cv2.line(draw_frame,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
     
     cv2.imshow('window',draw_frame)
-    cv2.imshow('result', result)
+    cv2.imshow('result_obsts', result_obsts)
     cv2.imshow('mask', result_mask)
+    cv2.imshow('pioneer coords',result_pioneer)
     
 
     
@@ -483,10 +493,11 @@ while(1):
         if write_video_on:
             out.release()
         break
-    elif k==ord('u'):
-        
+    elif k==ord('u'):        
         UDP_active=not(UDP_active)
         print('UDP_active: ',UDP_active)
+    elif k==ord('s'):
+        saveFile(file_obstacle_2_save,result_mask/255)
         
     
 
