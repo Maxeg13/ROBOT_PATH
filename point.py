@@ -36,7 +36,7 @@ class point:
         mll=l1*l2
         err=0
         if(mll!=0):
-            sin_=Vmult_/(l1*l2)        
+            sin_=Vmult_/(l1*l2)/1.001        
         else:
             return [1,1]
         angle=asin(sin_)

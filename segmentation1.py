@@ -171,7 +171,7 @@ def min(a,b):
         return b
     
     
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 def nothing(x):
     pass
@@ -180,17 +180,17 @@ cv2.namedWindow('hsv')
 cv2.namedWindow('window')
 
 # Starting with 100 to prevent error while masking
-h,s,v = 100,100,100
+h,s,v = 112,54,181
 
 # Creating track bar
 cv2.createTrackbar('h', 'window',0,179,nothing)
-h = cv2.setTrackbarPos('h','window', 112)
+h = cv2.setTrackbarPos('h','window', h)
 
 cv2.createTrackbar('s', 'window',0,255,nothing)
-s = cv2.setTrackbarPos('s','window', 98)
+s = cv2.setTrackbarPos('s','window', s)
 
 cv2.createTrackbar('v', 'window',0,255,nothing)
-v=cv2.setTrackbarPos('v','window', 189)
+v=cv2.setTrackbarPos('v','window', v)
 
 
 
@@ -198,7 +198,7 @@ v=cv2.setTrackbarPos('v','window', 189)
 size = 480, 640, 3
 accumed_img=np.zeros(size, dtype=np.uint8)
 write_video_on=0;
-wind=25;
+wind=20;
 
 if write_video_on:
     out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
@@ -272,7 +272,19 @@ else:
 pioneerPath.create_targ_mask(pioneer.rad);
 #saveFile('targ.txt',pioneerPath.targ_mask)
 size = 40, 40, 3
+#import
 hsv_rect=np.zeros(size, dtype=np.uint8)
+
+kernel_size=41
+kernel_circ=np.zeros((kernel_size,kernel_size,1),np.float);
+_centre=point(int(kernel_size/2),int(kernel_size/2))
+for i in range(0,kernel_size):
+    for j in range(0, kernel_size):
+        p=point(j,i)
+        if((p-_centre).length()<kernel_size/2):
+            kernel_circ[i,j,:]=1;
+kernel_circ=kernel_circ*2550/kernel_circ.sum();            
+#kernel_circ[::5,::5,0]
 
 while(1):
     
@@ -292,7 +304,7 @@ while(1):
     hsv_rect[:,:,0]=h
     hsv_rect[:,:,1]=s
     hsv_rect[:,:,2]=v
-    cv2.cvtColor(hsv_rect,cv2.COLOR_HSV2BGR)
+    hsv_rect=cv2.cvtColor(hsv_rect,cv2.COLOR_HSV2BGR)
 
     # Normal masking algorithm
     
@@ -405,7 +417,7 @@ while(1):
         sock.sendto(bytes([0,0,0,0]), (IP, PORT))
             
     UDP_active_h=UDP_active
-    cv2.line(result,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
+    
 #    pioneer.go(pioneerPath.pt);
     
     
@@ -427,7 +439,16 @@ while(1):
 #    cv2.circle(result, (20,20), 20, (255, 0, 255), -1)
 #    pts_=np.array([(1,1),(1,20),(20,20)]);
 #    cv2.fillPoly(result,pts_,(255,255,255))
-    result[0:40,0:40]=hsv_rect.copy()
+    
+    
+#    IMPORTANT
+#    result=cv2.cvtColor(result,cv2.COLOR_HSV2BGR);
+    result_kerneled=cv2.filter2D(result, cv2.CV_8UC1, kernel_circ);
+    result_mask = cv2.inRange(result_kerneled,0,150)
+    result_mask=255-result_mask
+    
+    draw_frame[0:40,0:40]=hsv_rect.copy()
+    
     
     draw_frame=pioneerPath.draw(draw_frame)
 #    draw_frame[200][100]=[255,255,255]
@@ -443,8 +464,11 @@ while(1):
 #    draw_frame=cv2.hconcat((result,frame))
 #    mask1=np.zeros((480,640),dtype=np.uint8);
     
+    cv2.line(result,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
+    
     cv2.imshow('window',draw_frame)
-    cv2.imshow('hsv',result)
+    cv2.imshow('result', result)
+    cv2.imshow('mask', result_mask)
     
 
     
