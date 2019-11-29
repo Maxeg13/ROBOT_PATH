@@ -59,6 +59,7 @@ class path:
             self.i-=1;
             
         self.pt=self.ps[self.i+1]
+#        print("stop is: ",self.stop);
         
     def create_targ_mask(self,ind):
         p_=self.ps[self.size-1]

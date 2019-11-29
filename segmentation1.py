@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from Agent import Agent
+from random import random 
 #from pyimagesearch import imutils
 from point import point
 from path import path
@@ -7,18 +9,24 @@ from obstacle import obstacle
 import socket
 from msvcrt import getch
 from math import sqrt,sin,cos, asin
+import warnings
 
+warnings.filterwarnings('ignore')
+
+cir_size=128
+
+write_video_on=0;
 Debug=0;
 file_save=0;
 file_load=0;
 file_obstacle_2_load='obstacle1.txt';
-file_obstacle_2_save='obstacle1.txt';
+file_obstacle_2_save='avcir_obst.csv';
 #load_obstacle=False;
 
-UDP_active=False
-UDP_active_h=UDP_active
+UDP_algor_active=0
+UDP_algor_active_h=UDP_algor_active
 rot_speed_k=26
-speed=120#60
+speed=1#60
 IP='169.254.104.146'
 PORT=49122
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -26,12 +34,13 @@ sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=2
 UDP_cnt=0
 #UDP_active=True
 #
-x_=np.array([100,200,300,400,500,550,560])
-y_=np.array([100,110,80,120,140,180,200])
+x_=np.array([170,200,250,300,350,400,450])
+x_+=100
+y_=np.array([100,88,80,120,140,180,200])
 
 
-#x_=np.array([560,550,500,400,300,200,100])
-#y_=np.array([200,180,140,120,80,110,100])
+x_=np.array([560,550,500,400,300,200,100])
+y_=np.array([200,180,140,120,80,110,100])
 
 y_+=140
 
@@ -54,10 +63,13 @@ def getMask(src_frame,hsv,hsv_list):
     return masked_img;
 
 def saveFile(name, data):
-    file = open(name,"w"); 
-    for i in range(0,480):
-        for j in range(0,640):
-            file.write(str(np.int(data[i][j]))+';'); 
+#    data2=data.copy()
+    data2=cv2.resize(data,(cir_size,cir_size))
+    file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/'+name,"w"); 
+    for i in range(0,cir_size):
+        for j in range(0,(cir_size-1)):
+            file.write(str(np.int(data2[i][j]))+';'); 
+        file.write(str(np.int(data2[i][127]))); 
         file.write('\n');
     file.close();
         
@@ -99,67 +111,6 @@ mX=1
     
     
 
-class Agent:    
-    def __init__(self):
-        self.mask=np.zeros((480,640),dtype=np.uint8)
-        self.mask[20,20]=1;
-        self.rad=30
-        self.dirs_ptr=0;
-        self.dirs_cnt=0;
-        self.dphi=0;
-        self.dirs=[point()]*20;
-        self.dir=point(1,0);
-        self.p=point(1,0);
-        self.p1=point();
-        self.phi=0;
-    def comp_dphi(self,p):
-        dphi_,err=self.v.getAngle(p-self.p)
-        if(err!=1):
-            self.dphi=dphi_
-            
-    def setP(self,p):
-        self.p=p;    
-    def comp_dir(self):
-        
-#        if((self.p1-self.p).length2()>150):
-#            self.dir=self.p-self.p1
-#            self.dir.norm()
-#            self.p1=self.p
-        
-        
-        
-        if(self.dirs_cnt==0):
-            self.dirs[self.dirs_ptr]=self.p-self.p1
-            self.p1=self.p
-            
-            self.bb=point()
-            for ab in self.dirs:
-                self.bb=self.bb+ab
-#            print(self.bb.vec())
-            dir,err =self.bb.norm()
-            
-            if(err==0):
-                self.dir=dir
-            self.dirs_ptr+=1
-            if(self.dirs_ptr==len(self.dirs)):
-                self.dirs_ptr=0
-        
-        self.dirs_cnt+=1
-        if(self.dirs_cnt==1):
-            self.dirs_cnt=0;
-            
- 
-            
-        
-    def go_(self,targ):# _ is for what??
-#        print(self.p.vecF())
-        
-        self.p+=(self.v*4);
-        
-        self.comp_dphi(targ)
-        if((self.p-targ).length2()>100):
-            self.phi+=self.dphi*0.07;        
-        self.v=point(cos(self.phi),sin(self.phi));
 
 pioneer=Agent();
 saveFile("pioneer.txt",pioneer.mask)
@@ -218,44 +169,40 @@ v=cv2.setTrackbarPos('v','window', v)
 
 size = 480, 640, 3
 accumed_img=np.zeros(size, dtype=np.uint8)
-write_video_on=0;
+
+
+
 
 
 if write_video_on:
     out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
 
-def click_and_crop(event, x, y, flags, pioneer):
+
+
+
+
+def click_and_crop(event, x, y, flags,ss):
     if(event==cv2.EVENT_LBUTTONDOWN):
         p=point(x,y)
-        global targ,obs_ps,obs,draw_obs
+        global targ,obs_ps,obs,draw_obs,pioneer,kernel_circ,targ_mask
         targ=p
-        obs_ps.append(p)
+#        print(pioneer.rad)
+        targ_mask=np.zeros([480, 640], dtype=np.uint8)
+        targ_mask[(targ.y-pioneer.rad):(targ.y+pioneer.rad+1), (targ.x-pioneer.rad):(targ.x+pioneer.rad+1)]=kernel_circ
+#        obs_ps.append(p)
         
-        if(len(obs_ps)==4):
-            
-            obs.createMask(obs_ps,25);
-            obs.createAuxMasks();
-            
-            draw_obs=1;
-            if(file_save):
-                saveFile(file_obstacle_2_save,  obs.mask);
+#        if(len(obs_ps)==4):
+#            
+#            obs.createMask(obs_ps,25);
+#            obs.createAuxMasks();
+#            
+#            draw_obs=1;
 #            if(file_save):
-#                file = open(file_2_save,"w"); 
-#                for i in range(0,480):
-#                    for j in range(0,640):
-#                        file.write(str(obs.mask[i][j])+';'); 
-#                    file.write('\n');
-#                file.close();
-            
-        
-#        print("hey");
-#        print(DR.p.vec())
-#        targ=p
-#        print(targ.vec())
-#        print(pioneerPath.is_right(p,0))
-#        print(DR.v.getAngle(p-DR.p))
-        
+#                saveFile(file_obstacle_2_save,  obs.mask);
 cv2.setMouseCallback("window", click_and_crop)
+
+        
+
 #print(pioneerPath.p);
 
 def on_press(key):
@@ -267,10 +214,14 @@ def on_press(key):
             key))
 
 
-#pss=[point(233,400),point(300,420), point(200,200)];
+def drive(rot,speed):
+    if(kbd_rot<0):
+        sock.sendto(bytes([np.uint8(255), np.uint8(rot),np.uint8(1),np.uint8(speed)]), (IP, PORT))
+    else:
+        sock.sendto(bytes([0, np.uint8(kbd_rot), np.uint8(1), np.uint8(speed)]), (IP, PORT))
 
-
-
+#fasten
+#sock.sendto(bytes([np.uint8(255), np.uint8(rot),np.uint8(1),np.uint8(speed)]), (IP, PORT))
     
 obs_ps=[];
 cX=2;
@@ -295,17 +246,24 @@ pioneerPath.create_targ_mask(pioneer.rad);
 size = 40, 40, 3
 #import
 hsv_rect=np.zeros(size, dtype=np.uint8)
+write_frame=np.zeros([480, 640,3], dtype=np.uint8)
+trace_mask=np.zeros([480, 640], dtype=np.uint8)
+targ_mask=np.zeros([480, 640], dtype=np.uint8)
 
 kernel_size=pioneer.rad*2+1
-kernel_circ=np.zeros((kernel_size,kernel_size,1),np.float);
+kernel_circ=np.zeros((kernel_size,kernel_size),np.float);
 _centre=point(int(kernel_size/2),int(kernel_size/2))
 for i in range(0,kernel_size):
     for j in range(0, kernel_size):
         p=point(j,i)
         if((p-_centre).length()<kernel_size/2):
-            kernel_circ[i,j,:]=1;
+            kernel_circ[i,j]=1;
 kernel_circ=kernel_circ*2550/kernel_circ.sum();            
 #kernel_circ[::5,::5,0]
+kbd_speed=0;
+kbd_rot=0;
+help_pt=point(1,0);
+
 
 while(1):
     
@@ -400,7 +358,9 @@ while(1):
 #    mX=320
 
     pioneer.setP(point(cX, cY))
-    pioneer.comp_dir();
+    trace_mask[pioneer.p.y,pioneer.p.x]=255;
+#    dangerous_________________________________________
+#    pioneer.comp_dir();
     dphi_,err=(pioneerPath.pt-pioneer.p).getAngle(pioneer.dir)#bad coding is here
     err2=0
     if((pioneerPath.pt-pioneer.p).length2()<900):  
@@ -429,33 +389,60 @@ while(1):
             rot_speed=0
             speed=0
 #        print(rot_speed)
-        if(UDP_active):    
+        if(UDP_algor_active):    
             if(rot_speed<0):
-                sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed),1,0]), (IP, PORT))
+                sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed),speed,20*speed]), (IP, PORT))
             else:
-                sock.sendto(bytes([0, np.uint8(rot_speed), 1,0]), (IP, PORT))
-    if UDP_active_h and not(UDP_active):#            
+                sock.sendto(bytes([0, np.uint8(rot_speed), speed,20*speed]), (IP, PORT))
+    if UDP_algor_active_h and not(UDP_algor_active):#            
         sock.sendto(bytes([0,0,0,0]), (IP, PORT))
             
-    UDP_active_h=UDP_active
+    UDP_algor_active_h=UDP_algor_active
     
 #    pioneer.go(pioneerPath.pt);
     
     
-#    
-    
-#    print(pioneerPath.i)
-#    cv2.circle(result, (mX, mY), 5, (255, 0, 0), -1)
+#draw_frame=src_frame
+#    for r in range(0,30):
+#        alpha=random()*6.28;
+#        l=8
+#        if((result_pioneer[pioneer.p.y+np.int(l*np.sin(alpha)),pioneer.p.x+np.int(l*np.cos(alpha))]!=[0,0,0]).any()):
+#            cv2.line(draw_frame,(pioneer.p).vec(),(pioneer.p+point(np.int(l*np.cos(alpha)),np.int(l*np.sin(alpha)))).vec(),(255, 0, 255));
+
     draw_frame=src_frame
-    cv2.circle(draw_frame, (cX, cY), 5, (255, 255, 255), -1)
+    ptsum=point(0,0);
+    for r in range(0,45):
+        alpha=random()*6.28;
+        l=7
+        pt=point(l*np.cos(alpha),l*np.sin(alpha))
+        if((result_pioneer[pioneer.p.y+np.int(pt.y),pioneer.p.x+np.int(pt.x)]!=[0,0,0]).any()):
+            if(pioneer.dirh.mult(pt)<0):
+                pt.invert();
+            ptsum=ptsum+pt;
+    ptsum.norm();
+    if((ptsum.x==0)and(ptsum.y==0)):    
+        1
+    else:
+        pioneer.dirh=ptsum;
+        pioneer.comp_dir2(pioneer.dirh)
+    cv2.line(draw_frame,(pioneer.p).vec(),(pioneer.p+pioneer.dir*l).vec(),(255, 0, 255));
+    cv2.line(result_pioneer,(pioneer.p).vec(),(pioneer.p+pioneer.dir*l).vec(),(255, 0, 255));
+            
+#                else:
+#                    print('NO')
+#    cv2.circle(draw_frame, (cX, cY), 1, (255, 255, 255), -1)
     phrase=['HERE WE GO', 'GO GO GO!!','IM COOL ROBOT', 'YEAH']
 #    cv2.putText(draw_frame, phrase[min(pioneerPath.i,0)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
 
 #    if()
 #    print(pioneerPath.is_right(DR.p,0))
 #    print(targ.vec())
-    cv2.circle(draw_frame, pioneer.p.vec(), 6, (255, 0, 255), -1)
+    
     cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
+    
+    
+    cv2.circle(result_pioneer, pioneer.p.vec(), 3, (255, 0, 255), -1)
+#    cv2.circle(result_pioneer, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
     
 #    cv2.circle(result, (20,20), 20, (255, 0, 255), -1)
 #    pts_=np.array([(1,1),(1,20),(20,20)]);
@@ -468,36 +455,52 @@ while(1):
     result_mask = cv2.inRange(result_kerneled,0,150)
     result_mask=255-result_mask
     
-    draw_frame[0:40,0:40]=hsv_rect.copy()
-    
-    
+    draw_frame[0:40,0:40]=hsv_rect.copy()    
+    cv2.line(draw_frame,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
     draw_frame=pioneerPath.draw(draw_frame)
+    draw_frame[:,:,0]|=result_mask;
+    draw_frame[:,:,2]|=targ_mask*255;
+    
+    draw_frame[:,:,1]|=trace_mask;
+    draw_frame[:,:,0]&=255-trace_mask;
+    draw_frame[:,:,2]&=255-trace_mask;
+    
+    cv2.circle(draw_frame, pioneer.p.vec(), 3, (255, 0, 255), -1)
+    dd=draw_frame.copy()
+#    draw_frame=cv2.resize(draw_frame,(128,128))
 #    draw_frame[200][100]=[255,255,255]
+   
+    #for mouse generated obs
     if(draw_obs):
 #        draw_frame = obs.draw(draw_frame)
 #        draw_frame = cv2.bitwise_and(draw_frame,draw_frame,mask = obs.not_mask)
-        draw_frame=draw_frame|obs.blue_mask;
+#        draw_frame=draw_frame|obs.blue_mask;
         draw_frame=draw_frame|pioneerPath.targ_red_mask;
+        cv2.line(draw_frame,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
+        draw_frame|=result_mask;
 #        draw_frame=draw_frame|pioneer.mask*255;
         #|pioneer.mask*255;
 #        cv2.imshow('hsv',obs.blue_mask)
 #    print(pioneerPath.size)
 #    draw_frame=cv2.hconcat((result,frame))
 #    mask1=np.zeros((480,640),dtype=np.uint8);
+#    result_pioneer
     
-    cv2.line(draw_frame,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
     
     cv2.imshow('window',draw_frame)
     cv2.imshow('result_obsts', result_obsts)
-    cv2.imshow('mask', result_mask)
-    cv2.imshow('pioneer coords',result_pioneer)
+    cv2.imshow('mask', targ_mask*255)
+#    cv2.imshow('pioneer coords',result_pioneer)
     
 
     
     
-    
+#    write_frame[0:480,:,:]=draw_frame.copy()
+#    write_frame[480:960,:,:]=draw_frame.copy()    
     if write_video_on:
         out.write(draw_frame)
+        
+        
 
     k = cv2.waitKey(5) & 0xFF
     if k == 27:
@@ -505,12 +508,66 @@ while(1):
             out.release()
         break
     elif k==ord('u'):        
-        UDP_active=not(UDP_active)
-        print('UDP_active: ',UDP_active)
-    elif k==ord('s'):
+        UDP_algor_active=not(UDP_algor_active)
+        print('UDP_active: ',UDP_algor_active)
+    elif k==ord('o'):#'s' is already busy
         saveFile(file_obstacle_2_save,result_mask/255)
+
+#save the robot begin
+        file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/avcir_start.csv',"w"); 
+        file.write(str(np.int(pioneer.p.x/640*cir_size))+';'+str(np.int(pioneer.p.y/480*cir_size))); 
+        file.write('\n');
+        file.close();
         
-    
+        saveFile('avcir_target.csv',targ_mask)
+        print('data saved')
+        #Debug drive
+    elif k==ord('a'): 
+        kbd_rot+=(10);
+        drive(kbd_rot,kbd_speed);
+    elif k==ord('d'):
+        kbd_rot-=(10);
+        drive(kbd_rot,kbd_speed);
+
+    elif k==ord('w'): 
+        
+        kbd_speed+=(10);
+        print(kbd_speed)
+        drive(kbd_rot,kbd_speed);
+       
+    elif k==ord('s'):
+        kbd_speed-=(10);
+        print(kbd_speed);
+        drive(kbd_rot,kbd_speed);
+    elif k==ord('h'):
+        sock.sendto(bytes([np.uint8(0), np.uint8(0),np.uint8(0),np.uint8(0)]), (IP, PORT))
+    elif k==ord('l'):
+        x_=[];
+        y_=[];
+        file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/avcir_trectory.csv', "r");
+        x__=file.readline();
+        x__=x__.split(';')
+        for j in range(0,len(x__)):
+            x_.append(int(x__[j]));  
+        x__=file.readline();
+        file.close();
+        
+        x__=x__.split(';')
+        for j in range(0,len(x__)):
+            y_.append(int(x__[j]));               
+            
+        x_=np.array(x_)
+        y_=np.array(y_)
+        x_*=round(640./cir_size)
+        y_*=round(480./cir_size)
+        y_-=15
+#        y_+=65
+        
+        
+        
+        pioneerPath=path(x_,y_) #bad __ 
+        pioneerPath.comp_n()        
+
 
 cap.release()
 
