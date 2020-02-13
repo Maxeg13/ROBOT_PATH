@@ -16,8 +16,8 @@ class path:
         self.tau=[]
         self.n=[]
         for i in range(0,self.size):
-            p1=point(a[i],b[i],i)
-            self.ps.append(p1)
+            p_=point(a[i],b[i],i)
+            self.ps.append(p_)
     def draw(self,img):
         for i in range(1,self.size):
             cv2.line(img,self.ps[i-1].vec(),self.ps[i].vec(),(255,0,0),2)

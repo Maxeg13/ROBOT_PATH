@@ -12,6 +12,7 @@ class Agent:
         self.dirs=[point()]*10;
         self.dirh=point(1,0);
         self.dir=point(1,0);
+        self.pp=point(1,0);
         self.p=point(1,0);
         self.p1=point();
         self.phi=0;
@@ -21,6 +22,7 @@ class Agent:
             self.dphi=dphi_
             
     def setP(self,p):
+        self.pp=self.p
         self.p=p;    
     def comp_dir(self):
         

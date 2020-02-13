@@ -14,7 +14,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 cir_size=128
-
+del_cnt=35;
+path_draw=True;
 write_video_on=0;
 Debug=0;
 file_save=0;
@@ -26,7 +27,8 @@ file_obstacle_2_save='avcir_obst.csv';
 UDP_algor_active=0
 UDP_algor_active_h=UDP_algor_active
 rot_speed_k=26
-speed=1#60
+speed_init=120
+speed=speed_init#60
 IP='169.254.104.146'
 PORT=49122
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -102,7 +104,7 @@ def pre_median_y(img):
     else:
         return [1,1]
     
-#    return 1
+#    return 1...>..
 #    return sums
 mY=1
 mX=1 
@@ -123,7 +125,7 @@ saveFile("pioneer.txt",pioneer.mask)
 
 pioneerPath=path(x_,y_) #bad __ 
 pioneerPath.comp_n()
-targ=point(10,10)   
+targ=point(x_[-1],y_[-1])   
 
 
 def max(a,b):
@@ -143,7 +145,7 @@ def min(a,b):
 if(Debug):
     cap = cv2.VideoCapture(1)
 else:
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
 def nothing(x):
     pass
@@ -152,7 +154,7 @@ cv2.namedWindow('hsv')
 cv2.namedWindow('window')
 
 # Starting with 100 to prevent error while masking
-h,s,v = 112,54,181
+h,s,v = 86,120,119
 
 # Creating track bar
 cv2.createTrackbar('h', 'window',0,179,nothing)
@@ -166,16 +168,19 @@ v=cv2.setTrackbarPos('v','window', v)
 
 
 
-
-size = 480, 640, 3
-accumed_img=np.zeros(size, dtype=np.uint8)
+screen_size= 480, 640, 3
+#size = 480, 640, 3
+accumed_img=np.zeros(screen_size, dtype=np.uint8)
 
 
 
 
 
 if write_video_on:
-    out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
+#    self._fourcc = VideoWriter_fourcc(*'MP4V')
+#self._out = VideoWriter(self._name, self._fourcc, 20.0, (640,480))
+    out=cv2.VideoWriter('hsv_.mp4',cv2.VideoWriter_fourcc(*'MP4V'), 24, (640,480))
+#    out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
 
 
 
@@ -303,7 +308,8 @@ while(1):
         masked_img_obsts=getMask(src_frame,hsv,[16, 101, 215]);
         
         
-    masked_img_pioneer=getMask(src_frame,hsv,[81, 54, 226]);
+#    masked_img_pioneer=getMask(src_frame,hsv,[81, 54, 226]);
+        masked_img_pioneer=getMask(src_frame,hsv,[h, s, v]);
 #    result=cv2.blur(result,(10,10))
 #    k=0.9
 #    accumed_img=cv2.addWeighted(masked_img,k,accumed_img,1-k,0)
@@ -317,13 +323,13 @@ while(1):
 #    cv2.addWeighted( result, alpha, hsv_rect, beta, 0.0, result);
 #    result=result|hsv_rect
 #    [cY,c]
-    
+
     gray = cv2.cvtColor(result_pioneer, cv2.COLOR_BGR2GRAY)
     M=cv2.moments(gray)
     if(M["m00"]!=0):
         cX = int(M["m10"] / M["m00"]) 
         cY = int(M["m01"] / M["m00"])
-    
+        
 #    edges = cv2.Canny(result,100,200)
 #    cnts = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 #    cnts = imutils.grab_contours(cnts)
@@ -347,8 +353,11 @@ while(1):
 #    else:
 #        cX=640;
 #        cY=480;
-
-    pioneerPath.check_reached(pioneer.p);
+    if(time==2):
+        trace_mask=np.zeros([480, 640], dtype=np.uint8)
+    if(time>3):
+        
+        pioneerPath.check_reached(pioneer.p);
 
     
 #    mask
@@ -358,20 +367,26 @@ while(1):
 #    mX=320
 
     pioneer.setP(point(cX, cY))
-    trace_mask[pioneer.p.y,pioneer.p.x]=255;
+    cv2.line(trace_mask,(pioneer.p).vec(),(pioneer.pp).vec(),(255,255,255))
+
+    
+    
 #    dangerous_________________________________________
 #    pioneer.comp_dir();
+    
     dphi_,err=(pioneerPath.pt-pioneer.p).getAngle(pioneer.dir)#bad coding is here
     err2=0
-    if((pioneerPath.pt-pioneer.p).length2()<900):  
+    if((pioneerPath.pt-pioneer.p).length2()<200):  
         err2=1
-        pioneer.dphi=0
+        pioneer.dphi=dphi_*rot_speed_k*0.5
 #        print((pioneerPath.pt-pioneer.p).length2())
         
     if((err==0) and (err2==0)):
         pioneer.dphi=dphi_*rot_speed_k
     
-
+#    if(time==38):
+#        pioneerPath=path(x_,y_) #bad __ 
+#        pioneerPath.comp_n()        
     
     
     
@@ -383,17 +398,20 @@ while(1):
         if(time>40):
             rot_speed=pioneer.dphi
         else:
+            
             rot_speed=0
             
         if(pioneerPath.stop):
+#            print('fuck')
             rot_speed=0
             speed=0
 #        print(rot_speed)
-        if(UDP_algor_active):    
+        if(UDP_algor_active): 
+            print(speed)
             if(rot_speed<0):
-                sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed),speed,20*speed]), (IP, PORT))
+                sock.sendto(bytes([np.uint8(255), np.uint8(rot_speed),0,speed]), (IP, PORT))
             else:
-                sock.sendto(bytes([0, np.uint8(rot_speed), speed,20*speed]), (IP, PORT))
+                sock.sendto(bytes([0, np.uint8(rot_speed), 0,speed]), (IP, PORT))
     if UDP_algor_active_h and not(UDP_algor_active):#            
         sock.sendto(bytes([0,0,0,0]), (IP, PORT))
             
@@ -409,16 +427,24 @@ while(1):
 #        if((result_pioneer[pioneer.p.y+np.int(l*np.sin(alpha)),pioneer.p.x+np.int(l*np.cos(alpha))]!=[0,0,0]).any()):
 #            cv2.line(draw_frame,(pioneer.p).vec(),(pioneer.p+point(np.int(l*np.cos(alpha)),np.int(l*np.sin(alpha)))).vec(),(255, 0, 255));
 
+
+
     draw_frame=src_frame
+
+
+#______________orientation
+    l=8
     ptsum=point(0,0);
     for r in range(0,45):
         alpha=random()*6.28;
-        l=7
-        pt=point(l*np.cos(alpha),l*np.sin(alpha))
-        if((result_pioneer[pioneer.p.y+np.int(pt.y),pioneer.p.x+np.int(pt.x)]!=[0,0,0]).any()):
-            if(pioneer.dirh.mult(pt)<0):
-                pt.invert();
-            ptsum=ptsum+pt;
+#        l=7# old
+        
+        dir_=point(l*np.cos(alpha),l*np.sin(alpha))
+        if(l<pioneer.p.y<(screen_size[0]-l)and(l<pioneer.p.x<(screen_size[1]-l))):
+            if((result_pioneer[pioneer.p.y+np.int(dir_.y),pioneer.p.x+np.int(dir_.x)]!=[0,0,0]).any()):
+                if(pioneer.dirh.mult(dir_)<0):
+                    dir_.invert();
+                ptsum=ptsum+dir_;
     ptsum.norm();
     if((ptsum.x==0)and(ptsum.y==0)):    
         1
@@ -437,8 +463,8 @@ while(1):
 #    if()
 #    print(pioneerPath.is_right(DR.p,0))
 #    print(targ.vec())
-    
-    cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
+    if(path_draw):
+        cv2.circle(draw_frame, pioneerPath.pt.vec(), 5, (0, 255, 255), -1)
     
     
     cv2.circle(result_pioneer, pioneer.p.vec(), 3, (255, 0, 255), -1)
@@ -457,7 +483,8 @@ while(1):
     
     draw_frame[0:40,0:40]=hsv_rect.copy()    
     cv2.line(draw_frame,pioneer.p.vec(),(pioneer.p+(pioneer.dir*27)).vec(),(0,255,0),2)
-    draw_frame=pioneerPath.draw(draw_frame)
+    if(path_draw):
+        draw_frame=pioneerPath.draw(draw_frame)     
     draw_frame[:,:,0]|=result_mask;
     draw_frame[:,:,2]|=targ_mask*255;
     
@@ -489,8 +516,9 @@ while(1):
     
     cv2.imshow('window',draw_frame)
     cv2.imshow('result_obsts', result_obsts)
-    cv2.imshow('mask', targ_mask*255)
-#    cv2.imshow('pioneer coords',result_pioneer)
+#    cv2.imshow('mask', targ_mask*255)
+#    cv2.imshow('mask', targ_mask*255)
+    cv2.imshow('pioneer coords',result_pioneer)
     
 
     
@@ -510,6 +538,8 @@ while(1):
     elif k==ord('u'):        
         UDP_algor_active=not(UDP_algor_active)
         print('UDP_active: ',UDP_algor_active)
+        if(UDP_algor_active):
+            speed=speed_init
     elif k==ord('o'):#'s' is already busy
         saveFile(file_obstacle_2_save,result_mask/255)
 
@@ -539,35 +569,58 @@ while(1):
         kbd_speed-=(10);
         print(kbd_speed);
         drive(kbd_rot,kbd_speed);
+    elif k==ord('r'):
+        for a in pioneer.dirs:
+            a.x=-a.x;
+            a.y=-a.y;
+        
+        
     elif k==ord('h'):
+        kbd_speed=0;
+        kbd_rot=0;
         sock.sendto(bytes([np.uint8(0), np.uint8(0),np.uint8(0),np.uint8(0)]), (IP, PORT))
     elif k==ord('l'):
+        
         x_=[];
         y_=[];
         file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/avcir_trectory.csv', "r");
-        x__=file.readline();
-        x__=x__.split(';')
-        for j in range(0,len(x__)):
-            x_.append(int(x__[j]));  
-        x__=file.readline();
+        str_=file.readline();
+        xx=str_.split(';')
+        for j in range(0,len(xx)):
+            x_.append(int(xx[j]));  
+        str_=file.readline();
         file.close();
         
-        x__=x__.split(';')
-        for j in range(0,len(x__)):
-            y_.append(int(x__[j]));               
+        xx=str_.split(';')
+        for j in range(0,len(xx)):
+            y_.append(int(xx[j]));               
             
+        for k in range(0,del_cnt):
+            del x_[-2]
+            del y_[-2]
+        
+
         x_=np.array(x_)
         y_=np.array(y_)
+        
+
+        
         x_*=round(640./cir_size)
         y_*=round(480./cir_size)
-        y_-=15
+        y_-=19
 #        y_+=65
         
         
         
         pioneerPath=path(x_,y_) #bad __ 
         pioneerPath.comp_n()        
-
+    elif k==ord('e'):
+        trace_mask=np.zeros([480, 640], dtype=np.uint8)
+    elif k==ord('p'):
+        path_draw=not path_draw
+    elif k==ord('i'):
+        del_cnt+=1;
+        
 
 cap.release()
 
