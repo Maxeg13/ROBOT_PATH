@@ -7,12 +7,13 @@ Created on Fri Oct 18 17:29:39 2019
 from point import point
 import numpy as np
 import cv2
+from globals import *
 from line import line
 class obstacle:
     def __init__(self):
-        self.mask=np.zeros((480,640),dtype=np.uint8);
+        self.mask=np.zeros((screen_size[0],screen_size[1]),dtype=np.uint8);
         
-        self.blue_mask=np.zeros((480,640,3),dtype=np.uint8);
+        self.blue_mask=np.zeros((screen_size[0],screen_size[1],3),dtype=np.uint8);
         self.blue_mask[:,:,0]=255;
         
     def draw(self,img):

@@ -10,6 +10,7 @@ import socket
 from msvcrt import getch
 from math import sqrt,sin,cos, asin
 import warnings
+from globals import *
 
 warnings.filterwarnings('ignore')
 
@@ -34,6 +35,8 @@ PORT=49122
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20) # Change TTL (=20) to suit
 UDP_cnt=0
+
+
 #UDP_active=True
 #
 x_=np.array([170,200,250,300,350,400,450])
@@ -76,11 +79,11 @@ def saveFile(name, data):
     file.close();
         
 def loadFile(name):     
-    data=np.zeros((480,640),dtype=np.uint8)    
+    data=np.zeros((screen_size[0],screen_size[1]),dtype=np.uint8)    
     file = open(name, "r");
-    for i in range(0,480):
-        l=file.readline()[0:1280:2];
-        for j in range(0,640):
+    for i in range(0,screen_size[0]):
+        l=file.readline()[0:screen_size[1]:2];
+        for j in range(0,screen_size[1]):
             data[i,j]=int(l[j]);  
     file.close();
     return data
@@ -115,7 +118,9 @@ mX=1
 
 
 pioneer=Agent();
-saveFile("pioneer.txt",pioneer.mask)
+
+#__________what the fuck
+#saveFile("pioneer.txt",pioneer.mask)
 
 #y_=np.array([100,200,100,100,100,100,100])
       
@@ -146,6 +151,9 @@ if(Debug):
     cap = cv2.VideoCapture(1)
 else:
     cap = cv2.VideoCapture(1)
+    
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(screen_size[1]))
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(screen_size[0]))
 
 def nothing(x):
     pass
@@ -168,7 +176,7 @@ v=cv2.setTrackbarPos('v','window', v)
 
 
 
-screen_size= 480, 640, 3
+
 #size = 480, 640, 3
 accumed_img=np.zeros(screen_size, dtype=np.uint8)
 
@@ -179,7 +187,7 @@ accumed_img=np.zeros(screen_size, dtype=np.uint8)
 if write_video_on:
 #    self._fourcc = VideoWriter_fourcc(*'MP4V')
 #self._out = VideoWriter(self._name, self._fourcc, 20.0, (640,480))
-    out=cv2.VideoWriter('hsv_.mp4',cv2.VideoWriter_fourcc(*'MP4V'), 24, (640,480))
+    out=cv2.VideoWriter('hsv_.mp4',cv2.VideoWriter_fourcc(*'MP4V'), 24, (screen_size[1],screen_size[0]))
 #    out = cv2.VideoWriter('hsv_.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (640,480))
 
 
@@ -192,7 +200,7 @@ def click_and_crop(event, x, y, flags,ss):
         global targ,obs_ps,obs,draw_obs,pioneer,kernel_circ,targ_mask
         targ=p
 #        print(pioneer.rad)
-        targ_mask=np.zeros([480, 640], dtype=np.uint8)
+        targ_mask=np.zeros([screen_size[0], screen_size[1]], dtype=np.uint8)
         targ_mask[(targ.y-pioneer.rad):(targ.y+pioneer.rad+1), (targ.x-pioneer.rad):(targ.x+pioneer.rad+1)]=kernel_circ
 #        obs_ps.append(p)
         
@@ -251,9 +259,9 @@ pioneerPath.create_targ_mask(pioneer.rad);
 size = 40, 40, 3
 #import
 hsv_rect=np.zeros(size, dtype=np.uint8)
-write_frame=np.zeros([480, 640,3], dtype=np.uint8)
-trace_mask=np.zeros([480, 640], dtype=np.uint8)
-targ_mask=np.zeros([480, 640], dtype=np.uint8)
+write_frame=np.zeros([screen_size[0], screen_size[1],3], dtype=np.uint8)
+trace_mask=np.zeros([screen_size[0], screen_size[1]], dtype=np.uint8)
+targ_mask=np.zeros([screen_size[0], screen_size[1]], dtype=np.uint8)
 
 kernel_size=pioneer.rad*2+1
 kernel_circ=np.zeros((kernel_size,kernel_size),np.float);
@@ -354,7 +362,7 @@ while(1):
 #        cX=640;
 #        cY=480;
     if(time==2):
-        trace_mask=np.zeros([480, 640], dtype=np.uint8)
+        trace_mask=np.zeros([screen_size[0], screen_size[1]], dtype=np.uint8)
     if(time>3):
         
         pioneerPath.check_reached(pioneer.p);
@@ -434,6 +442,7 @@ while(1):
 
 #______________orientation
     l=8
+#    l=20
     ptsum=point(0,0);
     for r in range(0,45):
         alpha=random()*6.28;
@@ -545,7 +554,7 @@ while(1):
 
 #save the robot begin
         file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/avcir_start.csv',"w"); 
-        file.write(str(np.int(pioneer.p.x/640*cir_size))+';'+str(np.int(pioneer.p.y/480*cir_size))); 
+        file.write(str(np.int(pioneer.p.x/screen_size[1]*cir_size))+';'+str(np.int(pioneer.p.y/screen_size[0]*cir_size))); 
         file.write('\n');
         file.close();
         
@@ -595,9 +604,9 @@ while(1):
         for j in range(0,len(xx)):
             y_.append(int(xx[j]));               
             
-        for k in range(0,del_cnt):
-            del x_[-2]
-            del y_[-2]
+#        for k in range(0,del_cnt):
+#            del x_[-2]
+#            del y_[-2]
         
 
         x_=np.array(x_)
@@ -605,8 +614,8 @@ while(1):
         
 
         
-        x_*=round(640./cir_size)
-        y_*=round(480./cir_size)
+        x_*=round(float(screen_size[1])/cir_size)
+        y_*=round(float(screen_size[0])/cir_size)
         y_-=19
 #        y_+=65
         
@@ -615,7 +624,7 @@ while(1):
         pioneerPath=path(x_,y_) #bad __ 
         pioneerPath.comp_n()        
     elif k==ord('e'):
-        trace_mask=np.zeros([480, 640], dtype=np.uint8)
+        trace_mask=np.zeros([screen_size[0], screen_size[1]], dtype=np.uint8)
     elif k==ord('p'):
         path_draw=not path_draw
     elif k==ord('i'):

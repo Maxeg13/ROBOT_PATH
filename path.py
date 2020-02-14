@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 from point import point
+from globals import *
 
 class path:
     def __init__(self,a,b):
-        self.targ_mask=np.zeros((480,640),dtype=np.uint8);
-        self.targ_red_mask=np.zeros((480,640,3),dtype=np.uint8);
+        self.targ_mask=np.zeros((screen_size[0],screen_size[1]),dtype=np.uint8);
+        self.targ_red_mask=np.zeros((screen_size[0],screen_size[1],3),dtype=np.uint8);
         self.targ_red_mask[:,:,2]=255;
         
         self.stop=0
@@ -63,8 +64,8 @@ class path:
         
     def create_targ_mask(self,ind):
         p_=self.ps[self.size-1]
-        for i in range(0,480):
-            for j in range(0,640):                
+        for i in range(0,screen_size[0]):
+            for j in range(0,screen_size[1]):                
                 if((p_-point(j,i)).length2()<(ind*ind)):
                     self.targ_mask[i,j]=1;
         self.targ_red_mask=cv2.bitwise_and(self.targ_red_mask,self.targ_red_mask,mask = self.targ_mask);

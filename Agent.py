@@ -1,9 +1,10 @@
 import numpy as np
 from point import point
+from globals import *
 
 class Agent:    
     def __init__(self):
-        self.mask=np.zeros((480,640),dtype=np.uint8)
+        self.mask=np.zeros((screen_size[0],screen_size[1]),dtype=np.uint8)
         self.mask[20,20]=1;
         self.rad=23
         self.dirs_ptr=0;
