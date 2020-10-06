@@ -335,7 +335,7 @@ while(1):
 #    beta = ( 1.0 - alpha );
 #    cv2.addWeighted( result, alpha, hsv_rect, beta, 0.0, result);
 #    result=result|hsv_rect
-#    [cY,c]
+#     [cY,c]
 
     gray = cv2.cvtColor(result_pioneer, cv2.COLOR_BGR2GRAY)
     M=cv2.moments(gray)
