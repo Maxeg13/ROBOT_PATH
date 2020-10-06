@@ -1,3 +1,4 @@
+#C:\Users\student\Documents\MATLAB\avacir\avacir\avacir.m
 import cv2
 import numpy as np
 from Agent import Agent
@@ -119,9 +120,8 @@ mX=1
 
 pioneer=Agent();
 
-#__________what the fuck
+#__________what the ...
 #saveFile("pioneer.txt",pioneer.mask)
-
 #y_=np.array([100,200,100,100,100,100,100])
       
 
@@ -233,8 +233,11 @@ def drive(rot,speed):
     else:
         sock.sendto(bytes([0, np.uint8(kbd_rot), np.uint8(1), np.uint8(speed)]), (IP, PORT))
 
-#fasten
+
 #sock.sendto(bytes([np.uint8(255), np.uint8(rot),np.uint8(1),np.uint8(speed)]), (IP, PORT))
+ 
+    
+    
     
 obs_ps=[];
 cX=2;
@@ -273,6 +276,8 @@ for i in range(0,kernel_size):
             kernel_circ[i,j]=1;
 kernel_circ=kernel_circ*2550/kernel_circ.sum();            
 #kernel_circ[::5,::5,0]
+
+# Obviously keyboard's prefix
 kbd_speed=0;
 kbd_rot=0;
 help_pt=point(1,0);
@@ -466,7 +471,7 @@ while(1):
 #                else:
 #                    print('NO')
 #    cv2.circle(draw_frame, (cX, cY), 1, (255, 255, 255), -1)
-    phrase=['HERE WE GO', 'GO GO GO!!','IM COOL ROBOT', 'YEAH']
+    phrase=['phrase one','phrase two','phrase three']
 #    cv2.putText(draw_frame, phrase[min(pioneerPath.i,0)], (cX - 25, cY - 40),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0,100), 1)
 
 #    if()
@@ -551,8 +556,7 @@ while(1):
             speed=speed_init
     elif k==ord('o'):#'s' is already busy
         saveFile(file_obstacle_2_save,result_mask/255)
-
-#save the robot begin
+        #save the robot's starting position
         file = open('C:/Users/student/Documents/MATLAB/avacir/avacir/avcir_start.csv',"w"); 
         file.write(str(np.int(pioneer.p.x/screen_size[1]*cir_size))+';'+str(np.int(pioneer.p.y/screen_size[0]*cir_size))); 
         file.write('\n');
@@ -560,6 +564,8 @@ while(1):
         
         saveFile('avcir_target.csv',targ_mask)
         print('data saved')
+       
+        
         #Debug drive
     elif k==ord('a'): 
         kbd_rot+=(10);
@@ -567,17 +573,15 @@ while(1):
     elif k==ord('d'):
         kbd_rot-=(10);
         drive(kbd_rot,kbd_speed);
-
-    elif k==ord('w'): 
-        
+    elif k==ord('w'):         
         kbd_speed+=(10);
         print(kbd_speed)
-        drive(kbd_rot,kbd_speed);
-       
+        drive(kbd_rot,kbd_speed);       
     elif k==ord('s'):
         kbd_speed-=(10);
         print(kbd_speed);
         drive(kbd_rot,kbd_speed);
+        #reverse vector
     elif k==ord('r'):
         for a in pioneer.dirs:
             a.x=-a.x;
