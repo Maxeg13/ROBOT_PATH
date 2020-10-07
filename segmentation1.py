@@ -415,7 +415,6 @@ while(1):
             rot_speed=0
             
         if(pioneerPath.stop):
-#            print('fuck')
             rot_speed=0
             speed=0
 #        print(rot_speed)

@@ -33,26 +33,26 @@ class path:
             self.tau[i].norm()
             
         for i in range(1,self.size-1):
-            n_=self.tau[i]-(self.tau[i-1])
+            n_=self.tau[i]+(self.tau[i-1])
 #            tau_.norm()
-            if(n_==0):
-                n_=self.tau[i]
-                n_.rotate()
-                
-            if(n_.Vmult(self.ps[i]-self.ps[i-1])<0):
-                n_.invert();
+#            if(n_==0):
+#                n_=self.tau[i]
+#                n_.rotate()
+#                
+#            if(n_.Vmult(self.ps[i]-self.ps[i-1])<0):
+#                n_.invert();
             self.n.append(n_);
     def is_right(self, p1, i):
         
         p1=p1-(self.ps[i+1])
         p2=self.n[i]
-        res=p1.Vmult(p2)
+        res=p1.mult(p2)
         if(res>0):
             return True
         else:
             return False
     def check_reached(self,p):
-        if(not(self.is_right(p,self.i))):
+        if((self.is_right(p,self.i))):
             
             self.i+=1;
         if(self.i==(self.size-2)):
